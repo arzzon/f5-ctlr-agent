@@ -1,40 +1,24 @@
-#!/usr/bin/env python
-
-# Copyright (c) 2018-2021 F5 Networks, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-try: # for pip >= 10
-    from pip._internal.req import parse_requirements as parse_reqs
-except ImportError: # for pip <= 9.0.3
-    from pip.req import parse_requirements as parse_reqs
-from setuptools import setup
-from setuptools import find_packages
-
+import importlib.util
+import sys
+from setuptools import setup, find_packages
 import f5_ctlr_agent
 
-# NOTE: This package needs to be installed with pip --process-dependency-links
+def parse_requirements(filename):
+    """ Load requirements from a pip requirements file """
+    with open(filename) as f:
+        lines = f.read().splitlines()
+        # Remove comments and empty lines
+        reqs = [line for line in lines if line and not line.startswith('#')]
+    return reqs
 
-install_reqs = []
-install_links = []
-install_gen = parse_reqs('./agent-runtime-requirements.txt', session='setup')
+# Parse requirements and dependency links
+install_reqs = parse_requirements('./agent-runtime-requirements.txt')
+install_links = [req for req in install_reqs if '://' in req]
+install_reqs = [req for req in install_reqs if '://' not in req]
 
-for req in install_gen:
-    install_reqs.append(str(req.req))
-    if req.link is not None:
-        install_links.append(str(req.link) + '-0')
+print('install requirements:', install_reqs)
+print('dependency links:', install_links)
 
-print(('install requirements', install_reqs))
 setup(
     name='f5-ctlr-agent',
     description='F5 Networks Controller Agent',
